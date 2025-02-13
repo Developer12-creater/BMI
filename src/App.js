@@ -1,61 +1,80 @@
-import React, { useState } from "react";
-import "./index.css"; // Import the CSS file
+import { useState } from "react";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
+import "./index.css";
 
-export default function BMICalculator() {
-  const [weight, setWeight] = useState("");
-  const [height, setHeight] = useState("");
-  const [bmi, setBmi] = useState(null);
-  const [category, setCategory] = useState("");
+export default function StatusReport() {
+  const [tableData, setTableData] = useState([]);
+  const [formData, setFormData] = useState({ date: "", hrs: "", description: "" });
 
-  const calculateBMI = () => {
-    if (weight && height) {
-      const heightInMeters = height / 100;
-      const bmiValue = (weight / (heightInMeters * heightInMeters)).toFixed(2);
-      setBmi(bmiValue);
-      determineCategory(bmiValue);
+  const handleChange = (e) => {
+    if (e.target.name === "date") {
+      const formattedDate = formatDate(e.target.value);
+      setFormData({ ...formData, date: formattedDate });
+    } else {
+      setFormData({ ...formData, [e.target.name]: e.target.value });
     }
   };
 
-  const determineCategory = (bmiValue) => {
-    if (bmiValue < 18.5) {
-      setCategory("Underweight");
-    } else if (bmiValue >= 18.5 && bmiValue < 24.9) {
-      setCategory("Normal weight");
-    } else if (bmiValue >= 25 && bmiValue < 29.9) {
-      setCategory("Overweight");
-    } else {
-      setCategory("Obese");
-    }
+  const formatDate = (inputDate) => {
+    const dateObj = new Date(inputDate);
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const year = dateObj.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  const addRow = () => {
+    setTableData([...tableData, formData]);
+    setFormData({ date: "", hrs: "", description: "" });
+  };
+
+  const calculateTotalHours = () => {
+    return tableData.reduce((total, row) => total + Number(row.hrs), 0);
+  };
+
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    doc.text("Status Report", 20, 10);
+    doc.autoTable({
+      head: [["Date", "Hrs", "Description"]],
+      body: tableData.map(row => [row.date, row.hrs, row.description]),
+    });
+    doc.text(`Total Hours: ${calculateTotalHours()}`, 20, doc.autoTable.previous.finalY + 10);
+    doc.save("status_report.pdf");
   };
 
   return (
     <div className="container">
-      <div className="card">
-        <h2>BMI Calculator</h2>
-        <input
-          type="number"
-          placeholder="Weight (kg)"
-          value={weight}
-          onChange={(e) => setWeight(e.target.value)}
-          className="input"
-        />
-        <input
-          type="number"
-          placeholder="Height (cm)"
-          value={height}
-          onChange={(e) => setHeight(e.target.value)}
-          className="input"
-        />
-        <button onClick={calculateBMI} className="button">
-          Calculate BMI
-        </button>
-        {bmi && (
-          <div>
-            <h3>Your BMI: {bmi}</h3>
-            <p>Category: {category}</p>
-          </div>
-        )}
+      <h2 className="title">Daily Status Report</h2>
+      <div className="form-group">
+        <input name="date" type="date" placeholder="Date" value={formData.date} onChange={handleChange} className="input-field" />
+        <input name="hrs" type="number" placeholder="Hrs" value={formData.hrs} onChange={handleChange} className="input-field" />
+        <input name="description" placeholder="Description" value={formData.description} onChange={handleChange} className="input-field" />
       </div>
+      <button onClick={addRow} className="button-primary">Add Entry</button>
+      <div className="table-container">
+        <table className="styled-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Hrs</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tableData.map((row, index) => (
+              <tr key={index}>
+                <td>{row.date}</td>
+                <td>{row.hrs}</td>
+                <td>{row.description}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="total-hours">Total Hours: {calculateTotalHours()}</div>
+      </div>
+      <button onClick={generatePDF} className="button-secondary">Generate PDF</button>
     </div>
   );
 }
