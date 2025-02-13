@@ -8,20 +8,7 @@ export default function StatusReport() {
   const [formData, setFormData] = useState({ date: "", hrs: "", description: "" });
 
   const handleChange = (e) => {
-    if (e.target.name === "date") {
-      const formattedDate = formatDate(e.target.value);
-      setFormData({ ...formData, date: formattedDate });
-    } else {
-      setFormData({ ...formData, [e.target.name]: e.target.value });
-    }
-  };
-
-  const formatDate = (inputDate) => {
-    const dateObj = new Date(inputDate);
-    const day = String(dateObj.getDate()).padStart(2, '0');
-    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const year = dateObj.getFullYear();
-    return `${day}-${month}-${year}`;
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const addRow = () => {
